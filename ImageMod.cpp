@@ -1,6 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <map>
 using namespace std;
 
 
@@ -106,7 +107,61 @@ int  BITMAPINFOHEADER::WriteBmpInfoHeader (ofstream &fp){
 	return 1;
 }
 
+/*
+int  solarizationEffect(thresholdValue){
+	//calculate histogram data of original file
+	//make solarization changes
+	//calculate histogram data of new file
+	
+	//using map container: when b=0, loop and add to counter
+	//repeat for b=0-255, then same for r=0-255 and g=0-255
+	//3 maps: R, G, B for each photo (original and new)
+	//<0-255, frequency>
+	map::<int, int> origR;
+	int origRCounter = 0;
+	map::<int, int> origB;
+	int origBCounter = 0;
+	map::<int, int> origG;
+	int origGCounter = 0;
+	map::<int, int> newR;
+	int newRCounter = 0;
+	map::<int, int> newB;
+	int newBCounter = 0;
+	map::<int, int> newG;
+	int newGCounter = 0;
+
+	for (int i=0 ; i < bhd.GETbiWS(); i++){
+                for (int j=0 ; j < bhd.GETbiHS(); j++) {
+                        fp1.read ((char*)&r, 1);
+			fp1.read ((char*)&b, 1);
+                        fp1.read ((char*)&g, 1);
+			origR[r]= origRCounter++;
+			origB[b]= origBCounter++;
+			orifG[g]= origGCounter++;
+			//might need to deal with difference between orig r and new r
+			//for printing purposes in here
+			if(r > thresholdValue)
+				r = 255 - r;
+			if(b > thresholdValue)
+				b = 255 - b;
+			if(g > thresholdValue)
+				g = 255 -g;
+			fp2.write ((char*)&r, sizeof(char));
+			fp2.write ((char*)&b, sizeof(char));
+			fp2.write ((char*)&g, sizeof(char));
+		}
+	}
+	return 1;
+
+}
+*/
+
 int main(int argc, char *argv[]) {
+	//TODO
+	//Clean up print statements
+	//try to have solarizationEffect() method work with parameter being passed in (make sure to update contents first)
+	//figure out how to print output file name
+	
 	BITMAPFILEHEADER bfh;
 	BITMAPINFOHEADER bhd;
 
@@ -131,7 +186,6 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-
 	if (bfh.GETbfType() != BF_TYPE)  /* Check for BM reversed, ie MB... */
 	{
 		cout << "ID is: " <<  bfh.GETbfType() << " Should have been" << 'M'*256+'B';
@@ -140,9 +194,6 @@ int main(int argc, char *argv[]) {
 		fp1.close();
 		return 1;
 	}
-
-
-	cout << "Image data Size: " << bfh.GETbfSize() << endl;
 
 	success = 0;
 	success = bhd.ReadBmpInfoHeader(fp1);
@@ -153,22 +204,62 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	cout << "Image Width Size:  " << bhd.GETbiWS() << endl;
-	cout << "Image Height Size:  " << bhd.GETbiHS() << endl;
-	cout<< "Bitcount: " << bhd.GETbiBitCount() << endl;
+	int thresholdValue;
 
+	cout << "Threshold value for solarization effect [0-255]:";
+	cin >> thresholdValue;
+	cout << "Total number of pixels in " << argv[2] <<  ": " << (bhd.GETbiWS())*(bhd.GETbiHS()) << endl;
+
+	
 	bfh.WriteBmpFileHeader(fp2);
 	bhd.WriteBmpInfoHeader(fp2);
 	unsigned char r, g, b;
-	for (int i=0 ; i < bhd.GETbiWS(); i++)
-		for (int j=0 ; j < bhd.GETbiHS(); j++) {
-			fp1.read ((char*)&b, 1);
-			fp1.read ((char*)&g, 1);
-			fp1.read ((char*)&r, 1);
-			fp2.write ((char*)&b, sizeof(char));
-			fp2.write ((char*)&g, sizeof(char));
-			fp2.write ((char*)&r, sizeof(char));
-		}
+
+	//solarizationEffect(thresholdValue);
+	map<int, int> origR;
+        int origRCounter = 0;
+        map<int, int> origB;
+        int origBCounter = 0;
+        map<int, int> origG;
+        int origGCounter = 0;
+        map<int, int> newR;
+        int newRCounter = 0;
+        map<int, int> newB;
+        int newBCounter = 0;
+        map<int, int> newG;
+        int newGCounter = 0;
+
+        for (int i=0 ; i < bhd.GETbiWS(); i++){
+                for (int j=0 ; j < bhd.GETbiHS(); j++) {
+                        fp1.read ((char*)&r, 1);
+                        fp1.read ((char*)&b, 1);
+                        fp1.read ((char*)&g, 1);
+                        origR[r]= origRCounter++;
+                        origB[b]= origBCounter++;
+                        origG[g]= origGCounter++;
+                        //might need to deal with difference between orig r and new r
+                        //for printing purposes in here
+                        if(r > thresholdValue){
+                                r = 255 - r;
+			}
+			newR[r] = newRCounter++;
+                        if(b > thresholdValue){
+                                b = 255 - b;
+			}
+			newB[b] = newBCounter++;
+                        if(g > thresholdValue){
+                                g = 255 -g;
+			}
+			newG[g] = newGCounter++;
+                        fp2.write ((char*)&r, sizeof(char));
+                        fp2.write ((char*)&b, sizeof(char));
+                        fp2.write ((char*)&g, sizeof(char));
+                }
+        }
+
+
+	cout << "The histogram data of " << argv[2] <<  " is written to " << argv[2] <<  ".txt" << endl;
+
 	fp1.close ();
 	fp2.close ();
 	return 0;
