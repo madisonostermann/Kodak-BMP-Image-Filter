@@ -107,61 +107,7 @@ int  BITMAPINFOHEADER::WriteBmpInfoHeader (ofstream &fp){
 	return 1;
 }
 
-/*
-int  solarizationEffect(thresholdValue){
-	//calculate histogram data of original file
-	//make solarization changes
-	//calculate histogram data of new file
-	
-	//using map container: when b=0, loop and add to counter
-	//repeat for b=0-255, then same for r=0-255 and g=0-255
-	//3 maps: R, G, B for each photo (original and new)
-	//<0-255, frequency>
-	map::<int, int> origR;
-	int origRCounter = 0;
-	map::<int, int> origB;
-	int origBCounter = 0;
-	map::<int, int> origG;
-	int origGCounter = 0;
-	map::<int, int> newR;
-	int newRCounter = 0;
-	map::<int, int> newB;
-	int newBCounter = 0;
-	map::<int, int> newG;
-	int newGCounter = 0;
-
-	for (int i=0 ; i < bhd.GETbiWS(); i++){
-                for (int j=0 ; j < bhd.GETbiHS(); j++) {
-                        fp1.read ((char*)&r, 1);
-			fp1.read ((char*)&b, 1);
-                        fp1.read ((char*)&g, 1);
-			origR[r]= origRCounter++;
-			origB[b]= origBCounter++;
-			orifG[g]= origGCounter++;
-			//might need to deal with difference between orig r and new r
-			//for printing purposes in here
-			if(r > thresholdValue)
-				r = 255 - r;
-			if(b > thresholdValue)
-				b = 255 - b;
-			if(g > thresholdValue)
-				g = 255 -g;
-			fp2.write ((char*)&r, sizeof(char));
-			fp2.write ((char*)&b, sizeof(char));
-			fp2.write ((char*)&g, sizeof(char));
-		}
-	}
-	return 1;
-
-}
-*/
-
 int main(int argc, char *argv[]) {
-	//TODO
-	//Clean up print statements
-	//try to have solarizationEffect() method work with parameter being passed in (make sure to update contents first)
-	//figure out how to print output file name
-	
 	BITMAPFILEHEADER bfh;
 	BITMAPINFOHEADER bhd;
 
@@ -176,6 +122,7 @@ int main(int argc, char *argv[]) {
 		cout << "Usage: " << argv[0] << " <input_filename> <output_filename>"<< endl;
 		return 1;
 	}
+	string outputFilename = argv[2];
 
 	int  success = 0;
 	success = bfh.ReadBmpFileHeader(fp1) ;
@@ -204,62 +151,78 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
+	//take in threshold value from user and return total number of pixels in the file you're writing to
 	int thresholdValue;
-
-	cout << "Threshold value for solarization effect [0-255]:";
+	cout << "Threshold value for solarization effect [0-255]: ";
 	cin >> thresholdValue;
-	cout << "Total number of pixels in " << argv[2] <<  ": " << (bhd.GETbiWS())*(bhd.GETbiHS()) << endl;
-
+	cout << "Total number of pixels in " << outputFilename <<  ": " << (bhd.GETbiWS())*(bhd.GETbiHS()) << endl;
 	
+	//write to output file
 	bfh.WriteBmpFileHeader(fp2);
 	bhd.WriteBmpInfoHeader(fp2);
+
+	//values for red, green and blue
 	unsigned char r, g, b;
 
-	//solarizationEffect(thresholdValue);
+	//maps to store <0-255, frequency> values for R, G and B of both original and new files
 	map<int, int> origR;
-        int origRCounter = 0;
         map<int, int> origB;
-        int origBCounter = 0;
         map<int, int> origG;
-        int origGCounter = 0;
         map<int, int> newR;
-        int newRCounter = 0;
         map<int, int> newB;
-        int newBCounter = 0;
         map<int, int> newG;
-        int newGCounter = 0;
 
         for (int i=0 ; i < bhd.GETbiWS(); i++){
                 for (int j=0 ; j < bhd.GETbiHS(); j++) {
+			//read rgb values for each pixel
                         fp1.read ((char*)&r, 1);
                         fp1.read ((char*)&b, 1);
                         fp1.read ((char*)&g, 1);
-                        origR[r]= origRCounter++;
-                        origB[b]= origBCounter++;
-                        origG[g]= origGCounter++;
-                        //might need to deal with difference between orig r and new r
-                        //for printing purposes in here
+			//for each value of rgb, increment frequency that value has occured (second value in map pair)
+			origR[r]++;
+			origB[b]++;
+			origG[g]++;
+			//calculate solarization effect- can change depending on effect you want to have
                         if(r > thresholdValue){
-                                r = 255 - r;
+                               r = 255 - r;
 			}
-			newR[r] = newRCounter++;
+			newR[r]++; //make sure to increment frequency in new file's map as well
                         if(b > thresholdValue){
-                                b = 255 - b;
+                               b = 255 - b;
 			}
-			newB[b] = newBCounter++;
+			newB[b]++;
                         if(g > thresholdValue){
-                                g = 255 -g;
+                               g = 255 -g;
 			}
-			newG[g] = newGCounter++;
+			newG[g]++;
+			//write all of the changed color values to each pixel of the new file
                         fp2.write ((char*)&r, sizeof(char));
                         fp2.write ((char*)&b, sizeof(char));
                         fp2.write ((char*)&g, sizeof(char));
                 }
         }
 
+	//write histogram data to a separate file (super long)
+	ofstream histogramData;
+	outputFilename.append(".txt");
+	histogramData.open(outputFilename);
+	cout << "Threshold value for solarization effect [0-255]: " << thresholdValue << endl;
+        cout << "Total number of pixels in " << outputFilename <<  ": " << (bhd.GETbiWS())*(bhd.GETbiHS()) << endl;
+	histogramData << "Histogram data for B:" << endl;
+	for(int i=0; i< 256; i++){
+		histogramData << i << ": " << origB[i] << " -> " << newB[i] << endl;
+	}
+	histogramData << "Histogram data for G:" << endl;
+        for(int i=0; i< 256; i++){
+                histogramData << i << ": " << origG[i] << " -> " << newG[i] << endl;
+        }
+	histogramData << "Histogram data for R:" << endl;
+        for(int i=0; i< 256; i++){
+                histogramData << i << ": " << origR[i] << " -> " << newR[i] << endl;
+        }
+	histogramData.close();
 
-	cout << "The histogram data of " << argv[2] <<  " is written to " << argv[2] <<  ".txt" << endl;
-
+	cout << "The histogram data of " << argv[2] <<  " is written to " << outputFilename << endl;
 	fp1.close ();
 	fp2.close ();
 	return 0;
