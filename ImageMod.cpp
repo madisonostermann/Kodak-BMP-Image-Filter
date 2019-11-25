@@ -171,6 +171,7 @@ int main(int argc, char *argv[]) {
         map<int, int> newR;
         map<int, int> newB;
         map<int, int> newG;
+	map<int, int>:: iterator it;
 
         for (int i=0 ; i < bhd.GETbiWS(); i++){
                 for (int j=0 ; j < bhd.GETbiHS(); j++) {
@@ -186,14 +187,14 @@ int main(int argc, char *argv[]) {
                         if(r > thresholdValue){
                                r = 255 - r;
 			}
-			newR[r]++; //make sure to increment frequency in new file's map as well
                         if(b > thresholdValue){
                                b = 255 - b;
 			}
-			newB[b]++;
                         if(g > thresholdValue){
                                g = 255 -g;
 			}
+			newR[r]++;
+			newB[b]++;
 			newG[g]++;
 			//write all of the changed color values to each pixel of the new file
                         fp2.write ((char*)&r, sizeof(char));
@@ -209,6 +210,23 @@ int main(int argc, char *argv[]) {
 	cout << "Threshold value for solarization effect [0-255]: " << thresholdValue << endl;
         cout << "Total number of pixels in " << outputFilename <<  ": " << (bhd.GETbiWS())*(bhd.GETbiHS()) << endl;
 	histogramData << "Histogram data for B:" << endl;
+	//TODO
+	//Make iterator to handle printing these
+	//
+	//create 3 element map with <rgb value (0-255), <origFreq, newFreq> >
+	
+	for(int i=0; i < 256; i++){
+		cout << i << ": " << origB.find(i)->second << " -> " << newB.find(i)->second << endl;
+	}
+	for(int i=0; i < 256; i++){
+                cout << i << ": " << origG.find(i)->second << " -> " << newG.find(i)->second << endl;
+        }
+	for(int i=0; i < 256; i++){
+                cout << i << ": " << origR.find(i)->second << " -> " << newR.find(i)->second << endl;
+        }
+
+	//ACTUAL INITIAL CODE HERE =========================
+	/*
 	for(int i=0; i< 256; i++){
 		histogramData << i << ": " << origB[i] << " -> " << newB[i] << endl;
 	}
@@ -220,6 +238,22 @@ int main(int argc, char *argv[]) {
         for(int i=0; i< 256; i++){
                 histogramData << i << ": " << origR[i] << " -> " << newR[i] << endl;
         }
+	*/
+	//=========================================
+
+	/*histogramData << "Histogram data for B:" << endl;
+	for(it = newB.begin(); it != newB.end(); it++){
+	       histogramData << it->first << ": " << origB[it->second] << " -> " << newB[it->second] << endl;
+	}
+	histogramData << "Histogram data for G:" << endl;
+	for(it = newG.begin(); it != newG.end(); it++){
+               histogramData << it->first << ": " << origG[it->second] << " -> " << newG[it->second] << endl;
+        }
+	histogramData << "Histogram data for R:" << endl;
+	for(it = newR.begin(); it != newR.end(); it++){
+               histogramData << it->first << ": " << origR[it->second] << " -> " << newR[it->second] << endl;
+        }
+	*/
 	histogramData.close();
 
 	cout << "The histogram data of " << argv[2] <<  " is written to " << outputFilename << endl;
